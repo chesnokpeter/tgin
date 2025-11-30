@@ -11,19 +11,19 @@
 ```
 
 todo:
-- [] cli interface
-- [] ddos guard
-- [] docker image
-- [] docs
-- [] tests
-- [] lib box
-- [] more integrations
-- [] bins fot distributives
-- [] support microservices
-- [] cache
-- [] more loud-balances
-- [] route to broker
-- [] analytics 
-- [] ban users
-- [] support userbots
-- [] secure like Cloudflare WAF
+- [ ] cli interface
+- [ ] ddos guard
+- [ ] docker image
+- [ ] docs
+- [ ] tests
+- [ ] lib box
+- [ ] more integrations
+- [ ] bins fot distributives
+- [ ] support microservices
+- [ ] cache
+- [ ] more loud-balances
+- [ ] route to broker
+- [ ] analytics 
+- [ ] ban users
+- [ ] support userbots
+- [ ] secure like Cloudflare WAF
