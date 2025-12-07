@@ -4,16 +4,19 @@
     server_port: Some(3000),
 
     updates: [
-        LongPollUpdate(
-            token: "...",
-        ),
+//        LongPollUpdate(
+//            token: "...",
+//        ),
+        WebhookUpdate(
+            path: "/bot/pull"
+        )
 
     ],
 
-    route: AllLB(
+    route: RoundRobinLB(
         routes: [
             LongPollRoute(
-                path: "/bot1/getUpdates"
+                path: "/bot/push"
             ),
 
             WebhookRoute(
