@@ -17,3 +17,11 @@ pub fn hide_segment(input: &str) -> String {
         input.to_string()
     }
 }
+
+pub fn mask_secret(input: &str, secret: &str) -> String {
+    if secret.is_empty() {
+        return input.to_string();
+    }
+    let mask = "*".repeat(secret.chars().count());
+    input.replace(secret, &mask)
+}

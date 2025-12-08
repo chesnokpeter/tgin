@@ -33,6 +33,6 @@ impl Serverable for WebhookRoute {}
 
 impl Printable for WebhookRoute {
     fn print(&self) -> String {
-        format!("longpull: {}", self.url)
+        format!("webhook: {}", self.url)
     }
 }

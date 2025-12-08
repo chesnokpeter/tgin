@@ -4,12 +4,12 @@
     server_port: Some(3000),
 
     updates: [
-//        LongPollUpdate(
-//            token: "...",
-//        ),
-        WebhookUpdate(
-            path: "/bot/pull"
-        )
+        LongPollUpdate(
+            token: "${TOKEN}",
+        ),
+//        WebhookUpdate(
+//            path: "/bot/pull"
+//        )
 
     ],
 

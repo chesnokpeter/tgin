@@ -20,6 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .long("file")
                 .value_name("FILE")
                 .help("Path to the configuration file")
+                .default_value("tgin.ron")
         );
 
     let matches = cli.get_matches();

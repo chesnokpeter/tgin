@@ -9,10 +9,30 @@ use crate::config::schema::{TginConfig, UpdateConfig, RouteStrategyConfig, Route
 use std::sync::Arc;
 use std::fs;
 
+use std::env;
+use regex::Regex;
 
 pub fn load_config(path: &str) -> TginConfig {
     let content = fs::read_to_string(path).expect("Failed to read config file");
-    ron::from_str(&content).expect("Failed to parse RON config")
+    let processed_content = substitute_env_vars(&content);
+
+    ron::from_str(&processed_content).expect("Failed to parse RON config")
+}
+
+
+fn substitute_env_vars(input: &str) -> String {
+    let re = Regex::new(r"\$\{(\w+)\}").unwrap();
+
+    re.replace_all(input, |caps: &regex::Captures| {
+        let var_name = &caps[1];
+        
+        match env::var(var_name) {
+            Ok(val) => val,
+            Err(_) => {
+                panic!("Environment variable '${}' is not set", var_name);
+            }
+        }
+    }).to_string()
 }
 
 pub fn build_updates(configs: Vec<UpdateConfig>) -> Vec<Box<dyn UpdaterComponent>> {

@@ -1,4 +1,4 @@
-use crate::utils::fun::hide_segment;
+use crate::utils::fun::{hide_segment, mask_secret};
 
 use crate::base::{Serverable, Printable};
 
@@ -14,6 +14,7 @@ use tokio::sync::mpsc::Sender;
 pub struct RegistrationWebhookConfig {
     public_ip: String,
     client: Client,
+
 
     set_webhook_url: String,
 
@@ -97,7 +98,7 @@ async fn handler(State(tx): State<Sender<Value>>, Json(update): Json<Value>) {
 impl Printable for WebhookUpdate {
     fn print(&self) -> String {
         let reg_text = match &self.registration {
-            Some(reg)  => format!("REGISTRATED ON {}", hide_segment(&reg.set_webhook_url)),
+            Some(reg)  => format!("REGISTRATED ON {}", &hide_segment(&reg.set_webhook_url)),
             None => "".to_string()
         };
         format!("webhook: 0.0.0.0{} {}", self.path, reg_text)

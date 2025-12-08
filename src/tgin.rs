@@ -5,6 +5,9 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 
+use std::net::SocketAddr;
+use axum_server::tls_rustls::RustlsConfig;
+
 use tokio::runtime::Builder; 
 
 pub struct Tgin {
@@ -12,6 +15,9 @@ pub struct Tgin {
     route: Arc<dyn RouteableComponent>,
     dark_threads: usize,
     server_port: Option<u16>,
+
+    pub ssl_cert: Option<String>,
+    pub ssl_key: Option<String>,  
 }
 
 impl Tgin {
@@ -26,8 +32,16 @@ impl Tgin {
             route,
             dark_threads,
             server_port,
+            ssl_cert: None,
+            ssl_key: None
         }
     }
+
+    pub fn set_tsl(&mut self, ssl_cert: String, ssl_key: String) {
+        self.ssl_cert = Some(ssl_cert);
+        self.ssl_key = Some(ssl_key);
+    }
+
 
     pub fn run(self) {
         println!("STARTED TGIN with {} worker threads\n", &self.dark_threads);
@@ -38,7 +52,7 @@ impl Tgin {
             println!("{}\n", update.print());
         }
 
-        println!("\n\nRUTE TO\n");
+        println!("\nRUTE TO\n");
 
         println!("{}", &self.route.print());
 
@@ -63,14 +77,34 @@ impl Tgin {
             }
 
             router = self.route.set_server(router);
-            let tx_state = tx.clone();
 
-            tokio::spawn(async move {
-                let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
-                let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-                let app = router.with_state(tx_state);
-                axum::serve(listener, app).await.unwrap();
-            });
+            let app = router.with_state(tx.clone());
+            let addr = SocketAddr::from(([0, 0, 0, 0], port));
+
+            match (self.ssl_cert.clone(), self.ssl_key.clone()) {
+                (Some(cert_path), Some(key_path)) => {
+                    let config = RustlsConfig::from_pem_file(
+                        cert_path, 
+                        key_path
+                    )
+                    .await
+                    .expect("Failed to load SSL certificates");
+
+                    tokio::spawn(async move {
+                        axum_server::bind_rustls(addr, config)
+                            .serve(app.into_make_service())
+                            .await
+                            .unwrap();
+                    });
+                }
+                _ => {
+                    tokio::spawn(async move {
+                        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+                        axum::serve(listener, app).await.unwrap();
+                    });
+                }
+            }
+
         }
 
         for provider in self.updates {
@@ -90,7 +124,4 @@ impl Tgin {
         }
     }
     
-    pub fn get_dark_threads_count(&self) -> usize {
-        self.dark_threads
-    }
 }

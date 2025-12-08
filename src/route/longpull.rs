@@ -108,6 +108,6 @@ impl Serverable for LongPollRoute {
 
 impl Printable for LongPollRoute {
     fn print(&self) -> String {
-        format!("webhook: 0.0.0.0{}", self.path)
+        format!("longpull: http://0.0.0.0{}", self.path)
     }
 }

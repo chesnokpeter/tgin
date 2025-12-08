@@ -60,12 +60,12 @@ Simple configuration in the ron
     server_port: Some(3000),
 
     updates: [
-//        LongPollUpdate(
-//            token: "...",
-//        ),
-        WebhookUpdate(
-            path: "/bot/pull"
-        )
+        LongPollUpdate(
+            token: "${TOKEN}", // get token from env
+        ),
+//        WebhookUpdate(
+//            path: "/bot/pull"
+//        )
 
     ],
 
