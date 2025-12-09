@@ -1,0 +1,40 @@
+services:
+  tgin:
+    build: ../../
+    container_name: tgin_server
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./tgin.ron:/etc/tgin/config.ron
+    environment:
+      - TOKEN=${TOKEN}
+      - WH=http://bot_3:3001/bot
+
+  bot_1:
+    build: .
+    depends_on:
+      - tgin
+    environment:
+      - TOKEN=${TOKEN}
+      - TGIN_ENDPOINT=http://tgin:3000/bot1/getUpdates
+
+  bot_2:
+    build: .
+    depends_on:
+      - tgin
+    environment:
+      - TOKEN=${TOKEN}
+      - TGIN_ENDPOINT=http://tgin:3000/bot2/getUpdates
+    volumes:
+      - ./bot2.py:/app/main.py
+
+  bot_3:
+    build: .
+    depends_on:
+      - tgin
+    environment:
+      - TOKEN=${TOKEN}
+      - PORT=3001
+
+    volumes:
+      - ./bot3.py:/app/main.py

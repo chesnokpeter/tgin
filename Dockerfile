@@ -1,4 +1,8 @@
-FROM rust:1.81-slim-bookworm as builder
+FROM rust:slim-bookworm AS builder
+
+RUN apt-get update && \
+    apt-get install -y pkg-config libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/tgin
 
@@ -7,7 +11,7 @@ COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN cargo build --release
 
-COPY . .
+COPY ./src ./src
 
 RUN touch src/main.rs
 
@@ -25,6 +29,5 @@ WORKDIR /home/tginuser
 
 COPY --from=builder /usr/src/tgin/target/release/tgin /usr/local/bin/tgin
 
-EXPOSE 3000
 
-CMD ["tgin", "-c", "/etc/tgin/config.ron"]
+CMD ["tgin", "-f", "/etc/tgin/config.ron"]

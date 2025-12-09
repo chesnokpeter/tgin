@@ -20,7 +20,7 @@
             ),
 
             WebhookRoute(
-                url: "http://127.0.0.1:3001/bot"
+                url: "${WH}"
             ),
 
             LongPollRoute(
