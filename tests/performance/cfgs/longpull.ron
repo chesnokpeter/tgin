@@ -1,0 +1,16 @@
+(
+    dark_threads: 4,
+
+    server_port: Some(3030),
+
+    updates: [
+        LongPollUpdate(token: "123:test", url: Some("http://10.5.0.3:8090/bot123:test/getUpdates"))
+    ],
+
+    route: RoundRobinLB(
+        routes: [
+            LongPollRoute(path: "/bot1/getUpdates"),
+            LongPollRoute(path: "/bot2/getUpdates"),
+        ]
+    )
+)

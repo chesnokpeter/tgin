@@ -1,18 +1,31 @@
 services:
-  tgin:
+  tgin_webhook:
     build: 
       context: ../../
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
     volumes:
-      - ./tgin.ron:/etc/tgin/config.ron
+      - ./cfgs/webhook.ron:/etc/tgin/config.ron
     depends_on:
-      - worker_1
-      - worker_2
+      - webhook_bot1
+      - webhook_bot2
     networks:
       testing_net:
         ipv4_address: 10.5.0.2 
+
+  tgin_longpull:
+    build: 
+      context: ../../
+      dockerfile: Dockerfile
+    volumes:
+      - ./cfgs/longpull.ron:/etc/tgin/config.ron
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090/bot123:test/getUpdates
+    depends_on:
+      - longpull_bot1
+      - longpull_bot2
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.21
 
   bench:
     build: ./benchmark
@@ -21,8 +34,8 @@ services:
       testing_net:
         ipv4_address: 10.5.0.3
 
-  worker_1:
-    build: .
+  webhook_bot1:
+    build: ./bot
     environment:
       - TELEGRAM_API_URL=http://10.5.0.3:8090
       - WEBHOOK_PATH=/webhook
@@ -31,8 +44,8 @@ services:
       testing_net:
         ipv4_address: 10.5.0.11
 
-  worker_2:
-    build: .
+  webhook_bot2:
+    build: ./bot
     environment:
       - TELEGRAM_API_URL=http://10.5.0.3:8090
       - WEBHOOK_PATH=/webhook
@@ -40,6 +53,42 @@ services:
     networks:
       testing_net:
         ipv4_address: 10.5.0.12 
+
+  longpull_bot_direct:
+    build: ./bot
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090
+      - TGIN_ENDPOINT=http://10.5.0.3:8090/bot123:test/getUpdates
+    volumes:
+      - ./bot/longpull.py:/app/bot.py
+    depends_on:
+      - bench
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.25
+
+  longpull_bot1:
+    build: ./bot
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090
+      - TGIN_ENDPOINT=http://10.5.0.21:3030/bot1/getUpdates
+    volumes:
+      - ./bot/longpull.py:/app/bot.py
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.23
+
+  longpull_bot2:
+    build: ./bot
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090
+      - TGIN_ENDPOINT=http://10.5.0.21:3030/bot2/getUpdates
+    volumes:
+      - ./bot/longpull.py:/app/bot.py
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.22
+
 
 networks:
   testing_net:
