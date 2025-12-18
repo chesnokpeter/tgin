@@ -1,4 +1,4 @@
-use axum::{Router, routing::post, Json};
+use axum::{Router, routing::{post, get}, Json};
 use serde_json::{Value};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Sender, Receiver};
@@ -12,10 +12,10 @@ use crate::api::methods;
 
 
 
-struct Api {
+pub struct Api {
     base_path: String,
     tx: Sender<ApiMessage>,
-    rx: Receiver<ApiMessage>,
+    pub rx: Receiver<ApiMessage>,
 }
 
 
@@ -40,7 +40,7 @@ impl Api {
 impl Serverable for Api {
     fn set_server(&self, main_router: Router<Sender<Value>>) -> Router<Sender<Value>> {
         let router = Router::new()
-            .route(&self.base_path, post(methods::add_route))
+            .route("/routes", get(methods::get_routes))
             .with_state(self.tx.clone());
 
 

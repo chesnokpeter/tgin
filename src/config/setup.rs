@@ -60,36 +60,32 @@ pub fn build_updates(configs: Vec<UpdateConfig>) -> Vec<Box<dyn UpdaterComponent
     result
 }
 
-pub fn build_route(cfg: RouteStrategyConfig) -> Arc<dyn RouteableComponent> {
+pub fn build_route(cfg: RouteConfig) -> Arc<dyn RouteableComponent> {
     match cfg {
-        RouteStrategyConfig::RoundRobinLB { routes } => {
-            let mut built_routes: Vec<Arc<dyn RouteableComponent>> = Vec::new();
-
-            for r_cfg in routes {
-                match r_cfg {
-                    RouteConfig::LongPollRoute { path } => {
-                        built_routes.push(Arc::new(LongPollRoute::new(path)));
-                    }
-                    RouteConfig::WebhookRoute { url } => {
-                        built_routes.push(Arc::new(WebhookRoute::new(url)));
-                    }
-                }
-            }
+        // Базовые роуты
+        RouteConfig::LongPollRoute { path } => {
+            Arc::new(LongPollRoute::new(path))
+        }
+        RouteConfig::WebhookRoute { url } => {
+            Arc::new(WebhookRoute::new(url))
+        }
+        
+        // Рекурсивная сборка RoundRobin
+        RouteConfig::RoundRobinLB { routes } => {
+            let built_routes: Vec<Arc<dyn RouteableComponent>> = routes
+                .into_iter()
+                .map(build_route) // Вызываем сами себя для каждого под-элемента
+                .collect();
+            
             Arc::new(RoundRobinLB::new(built_routes))
         }
-        RouteStrategyConfig::AllLB { routes } => {
-            let mut built_routes: Vec<Arc<dyn RouteableComponent>> = Vec::new();
-
-            for r_cfg in routes {
-                match r_cfg {
-                    RouteConfig::LongPollRoute { path } => {
-                        built_routes.push(Arc::new(LongPollRoute::new(path)));
-                    }
-                    RouteConfig::WebhookRoute { url } => {
-                        built_routes.push(Arc::new(WebhookRoute::new(url)));
-                    }
-                }
-            }
+        
+        // Рекурсивная сборка AllLB
+        RouteConfig::AllLB { routes } => {
+            let built_routes: Vec<Arc<dyn RouteableComponent>> = routes
+                .into_iter()
+                .map(build_route) // Вызываем сами себя
+                .collect();
 
             Arc::new(AllLB::new(built_routes))
         }

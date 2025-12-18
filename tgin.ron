@@ -1,6 +1,9 @@
 (
     dark_threads: 6,
 
+
+    api : Some(ApiConfig(base_path: "/api")),
+
     server_port: Some(3000),
 
 //    ssl: Some(SslConfig(

@@ -8,7 +8,8 @@ pub struct TginConfig {
     #[serde(default)]
     pub ssl: Option<SslConfig>,
     pub updates: Vec<UpdateConfig>,
-    pub route: RouteStrategyConfig,
+    pub route: RouteConfig,
+    pub api: Option<ApiConfig>,
 }
 
 fn default_workers() -> usize {
@@ -19,6 +20,11 @@ fn default_workers() -> usize {
 pub struct SslConfig {
     pub cert: String,
     pub key: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ApiConfig {
+    pub base_path: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -53,8 +59,15 @@ pub enum RouteStrategyConfig {
     AllLB { routes: Vec<RouteConfig> },
 }
 
+
+
+
+
 #[derive(Deserialize, Debug)]
 pub enum RouteConfig {
     LongPollRoute { path: String },
     WebhookRoute { url: String },
+    
+    RoundRobinLB { routes: Vec<RouteConfig> },
+    AllLB { routes: Vec<RouteConfig> },
 }

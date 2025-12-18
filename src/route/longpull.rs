@@ -110,4 +110,13 @@ impl Printable for LongPollRoute {
     fn print(&self) -> String {
         format!("longpull: http://0.0.0.0{}", self.path)
     }
+
+    fn json_struct(&self) -> Json<Value> {
+        Json(json!({
+            "type": "longpoll",
+            "options": {
+                "path": self.path
+            }
+        }))
+    }
 }

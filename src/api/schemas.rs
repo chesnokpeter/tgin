@@ -10,7 +10,7 @@ pub struct AddWebhookRoute {
     #[serde(default)]
     pub url: String,
     #[serde(default = "default_sublevel")]
-    sublevel: i8
+    pub sublevel: i8
 }
 
 
@@ -24,7 +24,7 @@ pub struct AddLongpullRoute {
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
-pub enum RouteType {
+pub enum AddRoute {
     Webhook(AddWebhookRoute),
-    Longpull(AddLongpullRoute)
+    Longpull(AddLongpullRoute),
 }

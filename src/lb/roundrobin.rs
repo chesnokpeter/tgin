@@ -2,7 +2,7 @@
 use crate::base::{Routeable, RouteableComponent, Serverable, Printable};
 
 use tokio::sync::mpsc::Sender;
-use axum::{Router};
+use axum::{Router, Json};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use serde_json::Value;
+use serde_json::{Value, json};
 
 pub struct RoundRobinLB {
     routes: Vec<Arc<dyn RouteableComponent>>,
@@ -57,5 +57,18 @@ impl Printable for RoundRobinLB {
         }
 
         text
+    }
+
+    fn json_struct(&self) -> Json<Value> {
+        let routes_json: Vec<Value> = self.routes
+            .iter()
+            .map(|route| route.json_struct().0) 
+            .collect();
+
+        Json(json!({
+            "type": "load-balancer",
+            "name": "round-robin",
+            "routes": routes_json
+        }))
     }
 }

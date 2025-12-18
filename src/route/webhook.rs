@@ -1,7 +1,9 @@
 use crate::base::{Routeable, Serverable, Printable};
 use async_trait::async_trait;
 use reqwest::Client;
-use serde_json::Value;
+use serde_json::{Value, json};
+
+use axum::Json;
 
 pub struct WebhookRoute {
     client: Client,
@@ -34,5 +36,14 @@ impl Serverable for WebhookRoute {}
 impl Printable for WebhookRoute {
     fn print(&self) -> String {
         format!("webhook: {}", self.url)
+    }
+
+    fn json_struct(&self) -> Json<Value> {
+        Json(json!({
+            "type": "webhook",
+            "options": {
+                "url": self.url
+            }
+        }))
     }
 }

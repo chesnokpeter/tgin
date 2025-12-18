@@ -2,14 +2,14 @@
 use crate::base::{Routeable, RouteableComponent, Serverable, Printable};
 
 use tokio::sync::mpsc::Sender;
-use axum::{Router};
+use axum::{Router, Json};
 
 use std::sync::Arc;
 
 
 use async_trait::async_trait;
 
-use serde_json::Value;
+use serde_json::{Value, json};
 
 pub struct AllLB {
     routes: Vec<Arc<dyn RouteableComponent>>,
@@ -55,8 +55,21 @@ impl Printable for AllLB {
         for route in &self.routes {
             text.push_str(&format!("{}\n\n", &route.print()));
         }
-
-
         text
     }
+
+    fn json_struct(&self) -> Json<Value> {
+        let routes_json: Vec<Value> = self.routes
+            .iter()
+            .map(|route| route.json_struct().0) 
+            .collect();
+
+        Json(json!({
+            "type": "load-balancer",
+            "name": "all",
+            "routes": routes_json
+        }))
+    }
+
+
 }

@@ -43,6 +43,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         conf.server_port,
     );
 
+    if let Some(api) = conf.api {
+        let api = api::router::Api::new(api.base_path);
+        tgin.set_api(api);
+    }
+
     if let Some(ssl) = conf.ssl {
         tgin.set_ssl(ssl.cert, ssl.key);
     }
