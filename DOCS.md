@@ -53,7 +53,7 @@ Top-level structure loaded from `tgin.ron` (`src/config/schema.rs`):
 - **`WebhookUpdate`**  
   Fields:  
   - `path` (required): Local path that Telegram should post updates to (e.g., `/bot/pull`).  
-  - `registration` (optional): `{ public_ip: String, token: String, set_webhook_url: Option<String> }` used for automatic webhook registration against Telegram. (The plumbing hook is present in `WebhookUpdate` but not yet wired inside `build_updates`, so manual registration or extending the builder is currently required.)  
+  - `registration` (optional): `Some(RegistrationWebhookConfig{ public_ip: String, token: String, set_webhook_url: Option<String> }` used for automatic webhook registration against Telegram. (The plumbing hook is present in `WebhookUpdate` but not yet wired inside `build_updates`, so manual registration or extending the builder is currently required.)  
   Behavior: exposes an HTTP endpoint on the configured `server_port` and pushes incoming JSON bodies into the routing pipeline.
 
 ### Routing targets
