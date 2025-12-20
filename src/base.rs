@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use tokio::sync::mpsc::Sender;
 
-use axum::{Json, Router};
+use axum::Router;
 
 use crate::update::base::Updater;
 

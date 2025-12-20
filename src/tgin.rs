@@ -155,17 +155,12 @@ impl Tgin {
                                     let _ = tx_response.send(self.route.json_struct().await);
                                 }
 
-
                                 ApiMessage::AddRoute{route, sublevel} => {
                                     let self_route = self.route.clone();
                                     match self_route.add_route(route).await {
                                         Err(_) => {},
                                         Ok(_) => {}
-
                                     }
-                                    // let new_route = Arc::new(WebhookRoute::new(data.url));
-                                    
-                                    // self.lb.add_route_internal(data.id, new_route).await;
                                 }
                             }
                         },

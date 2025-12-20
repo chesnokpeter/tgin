@@ -10,7 +10,9 @@
            \_/__/
 ```
 
-#### dedicated routing layer for Telegram bot infrastructure that enables efficient distribution of incoming updates across multiple bot instances. Think of it as a proxy specifically designed for Telegram's Bot API ecosystem
+#### dedicated routing layer for Telegram bot infrastructure that enables efficient distribution of incoming updates across multiple bot instances. Think of it as NGINX for Telegram's Bot API ecosystem
+
+[DOCUMENTATION](DOCS.md)
 
 ### Why Tgin?
 - Load balancing: distributes Telegram updates evenly across multiple bot instances
@@ -52,63 +54,40 @@ cargo build --release
 
 ### Configuration
 Simple configuration in the ron 
-```
+``` tgin.ron
 // tgin.ron
 (
     dark_threads: 6,
-
     server_port: Some(3000),
 
     updates: [
         LongPollUpdate(
-            token: "${TOKEN}", // get token from env
-        ),
-//        WebhookUpdate(
-//            path: "/bot/pull"
-//        )
-
+            token: "${TOKEN}",
+        )
     ],
 
     route: RoundRobinLB(
         routes: [
-            LongPollRoute(
-                path: "/bot/push"
-            ),
-
-            WebhookRoute(
-                url: "http://127.0.0.1:3001/bot"
-            ),
-
-            LongPollRoute(
-                path: "/bot2/getUpdates"
-            ),
+            LongPollRoute(path: "/bot1/getUpdates"),
+            WebhookRoute(url: "http://127.0.0.1:8080/bot2"),
         ]
     )
 
 )
 ```
 
+### Future features
+- Complete API
+- More tests / Performance tests
+- Perfect logging
+- Anti-DDoS guard
+- Message-brokers support 
+- Microservices-style
+- Collect analytics
+- Cache for bot
+- Support userbots
 
-### Todo:
-- [x] cli interface
-- [x] docker image
-- [x] start from axum_server
-- [ ] logging
-- [ ] ddos guard
-- [ ] docs
-- [ ] tests
-- [ ] lib box
-- [ ] more integrations
-- [ ] bins fot distributives
-- [ ] support microservices
-- [ ] cache
-- [ ] more loud-balances
-- [ ] route to broker
-- [ ] analytics 
-- [ ] ban users
-- [ ] support userbots
-- [ ] secure like Cloudflare WAF
-- [ ] floating input/output
+
 
 ### Main Goal
 **Provide a complete infrastructure toolkit for building scalable, high-load Telegram bots with microservices architecture and production-ready support**

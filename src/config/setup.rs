@@ -3,8 +3,8 @@ use crate::lb::{roundrobin::RoundRobinLB, all::AllLB};
 use crate::route::longpull::LongPollRoute;
 use crate::route::webhook::WebhookRoute;
 use crate::update::longpull::LongPollUpdate;
-use crate::update::webhook::{WebhookUpdate, RegistrationWebhookConfig};
-use crate::config::schema::{TginConfig, UpdateConfig, RouteStrategyConfig, RouteConfig};
+use crate::update::webhook::{WebhookUpdate};
+use crate::config::schema::{TginConfig, UpdateConfig,RouteConfig};
 
 use std::sync::Arc;
 use std::fs;

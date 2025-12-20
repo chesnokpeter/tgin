@@ -1,4 +1,4 @@
-use axum::{Router, routing::{post, get}, Json};
+use axum::{Router, routing::{post, get}};
 use serde_json::{Value};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Sender, Receiver};
@@ -22,7 +22,7 @@ pub struct Api {
 
 impl Api {
     pub fn new(base_path: String) -> Self {
-        let (tx, mut rx) = mpsc::channel::<ApiMessage>(100);
+        let (tx, rx) = mpsc::channel::<ApiMessage>(100);
         Self { 
             base_path,
             tx, 

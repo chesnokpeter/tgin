@@ -10,6 +10,9 @@ use crate::api::schemas::{AddRoute, RouteType};
 use crate::api::message::ApiMessage;
 
 use crate::route::webhook::WebhookRoute;
+use crate::route::longpull::LongPollRoute;
+
+use crate::base::RouteableComponent;
 
 
 
@@ -19,9 +22,9 @@ use crate::route::webhook::WebhookRoute;
 
 
 pub async fn add_route(State(tx): State<Sender<ApiMessage>>, Json(data): Json<AddRoute>)  {
-    let route = match data.typee {
+    let route: Arc<dyn RouteableComponent> = match data.typee {
         RouteType::Longpull(route) => {
-            let update = WebhookRoute::new(route.path);
+            let update = LongPollRoute::new(route.path);
             Arc::new(update)
         },
         RouteType::Webhook(route) => {
@@ -46,8 +49,8 @@ pub async fn get_routes(State(tx): State<Sender<ApiMessage>>) -> Result<Json<Val
 
     match rx_response.await {
         Ok(json) => Ok(Json::from(json)),
-        Err(_) => Err((
+        Err(_) => Err(
             http::StatusCode::INTERNAL_SERVER_ERROR
-        )),
+        ),
     }
 }
