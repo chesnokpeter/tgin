@@ -78,7 +78,7 @@ Load balancers compose multiple routes.
 Enable the API by adding an `api` block to your config:
 
 ```ron
-api: Some((
+api: Some(ApiConfig(
     base_path: "/api",
 )),
 ```
