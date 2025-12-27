@@ -1,11 +1,12 @@
 import { file_append } from "std/fs"
 
+let usecases = ["webhook-direct", "webhook-tgin", "webhook-tgin-3", "webhook-tgin-4", "webhook-tgin-5", "longpull-direct", "longpull-tgin", "longpull-tgin-3", "longpull-tgin-4", "longpull-tgin-5"]
 
-let usecases = ["webhook-direct", "webhook-tgin", "longpull-tgin", "longpull-direct"]
+let rps_values = [500, 1000, 2000, 5000, 8000, 10000]
 
-let rps_values = [100, 200, 300, 400, 500]
+main(args) {
+    let processor = args[0]
 
-main {
     $ make clean $?
     $ make build $?
     
@@ -24,13 +25,12 @@ main {
             let p99 = $ echo "{output}" | grep "p99:" | tr -s ' ' | xargs | cut -d ' ' -f 2 $?
             let max = $ echo "{output}" | grep "Max:" | tr -s ' ' | xargs | cut -d ' ' -f 2 $?
 
-            echo mode
+            $ make clean $?
             
             echo "RPS={rps} -> Sent: {sent}, Resv: {recv}, Errors: {errors}, Loss: {loss}%,  Min: {min}ms, Mean: {mean}ms, P50: {p50}ms, P95: {p95}ms, P99: {p99}ms, Max: {max}ms"
 
             file_append("results.csv", "{mode},{rps},{sent},{recv},{errors},{loss},{min},{mean},{p50},{p95},{p99},{max}")?
 
-            $ make clean $?
         }
     }
 }

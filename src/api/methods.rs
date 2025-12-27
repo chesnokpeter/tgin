@@ -7,13 +7,10 @@ use tokio;
 use std::sync::Arc;
 
 use crate::api::schemas::{AddRoute, RouteType};
-use crate::api::message::ApiMessage;
+use crate::api::message::{ApiMessage, AddRouteType};
 
 use crate::route::webhook::WebhookRoute;
 use crate::route::longpull::LongPollRoute;
-
-use crate::base::RouteableComponent;
-
 
 
 
@@ -22,14 +19,14 @@ use crate::base::RouteableComponent;
 
 
 pub async fn add_route(State(tx): State<Sender<ApiMessage>>, Json(data): Json<AddRoute>)  {
-    let route: Arc<dyn RouteableComponent> = match data.typee {
+    let route = match data.typee {
         RouteType::Longpull(route) => {
             let update = LongPollRoute::new(route.path);
-            Arc::new(update)
+            AddRouteType::Longpull(Arc::new(update))
         },
         RouteType::Webhook(route) => {
             let update = WebhookRoute::new(route.url);
-            Arc::new(update)
+            AddRouteType::Webhook(Arc::new(update))
         }
     };
 

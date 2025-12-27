@@ -47,7 +47,7 @@ async def main() -> None:
     @dp.message()
     async def echo_handler(message: Message):
         try:
-            time.sleep(0.01)
+            await asyncio.sleep(0.01)
             await message.answer(message.text)
         except Exception as e:
             print(f"Error sending reply: {e}")
@@ -68,6 +68,6 @@ async def main() -> None:
 
     bot = Bot(token=TOKEN, session=session)
 
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, polling_timeout=0)
 
 asyncio.run(main())

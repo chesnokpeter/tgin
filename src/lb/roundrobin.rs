@@ -1,14 +1,18 @@
 
 use crate::base::{Routeable, RouteableComponent, Serverable, Printable};
 
+use crate::api::message::AddRouteType;
+
 use tokio::sync::mpsc::Sender;
 use axum::{Router, Json};
 
 use tokio::sync::RwLock;
 
+use std::mem::zeroed;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
+use crate::dynamic::longpoll_registry::LONGPOLL_REGISTRY;
 
 use async_trait::async_trait;
 
@@ -46,10 +50,27 @@ impl Routeable for RoundRobinLB {
 
     }
 
-    async fn add_route(&self, route: Arc<dyn RouteableComponent>) -> Result<(), ()>{
+    async fn add_route(&self, route: AddRouteType) -> Result<(), ()>{
         let mut routes = self.routes.write().await;
-        routes.push(route);
-        Ok(())
+
+        match route {
+            AddRouteType::Longpull(route_arc) => {
+                match LONGPOLL_REGISTRY.write() {
+                    Ok(mut registry) => {
+                        registry.insert(route_arc.path.clone(), route_arc.clone());
+                        routes.push(route_arc); 
+                        Ok(())
+                    }
+                    Err(_) => {
+                        Err(())
+                    }
+                }
+            },
+            AddRouteType::Webhook(route) => {
+                routes.push(route); 
+                Ok(())
+            },
+        }
     }
 }
 

@@ -24,8 +24,8 @@ impl LongPollUpdate {
         Self {
             client: Client::new(),
             url: format!("https://api.telegram.org/bot{}/getUpdates", token),
-            default_timeout_sleep: 100,
-            error_timeout_sleep: 200,
+            default_timeout_sleep: 0,
+            error_timeout_sleep: 100,
             token_regex: Regex::new(TELEGRAM_TOKEN_REGEX).unwrap(),
         }
     }
@@ -55,7 +55,7 @@ impl Updater for LongPollUpdate {
         let mut offset = 0;
 
         loop {
-            let params = [("offset", offset.to_string()), ("timeout", "30".to_string())];
+            let params = [("offset", offset.to_string()), ("timeout", "30".to_string()), ("limit", "100".to_string())];
             match self.client.get(&self.url).query(&params).send().await {
                 Ok(res) => {
                     match res.json::<Value>().await {

@@ -5,6 +5,7 @@ mod tgin;
 mod update;
 mod config;
 mod utils;
+mod dynamic;
 
 mod api;
 

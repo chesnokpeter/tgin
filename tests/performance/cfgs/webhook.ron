@@ -1,5 +1,8 @@
 (
     dark_threads: 4,
+
+    api : Some(ApiConfig(base_path: "/api")),
+
     server_port: Some(3000),
 
     updates: [

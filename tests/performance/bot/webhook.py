@@ -19,7 +19,7 @@ async def main():
     @dp.message()
     async def echo_handler(message: types.Message):
         try:
-            time.sleep(0.01)
+            await asyncio.sleep(0.01)
             await message.answer(message.text)
         except Exception as e:
             print(f"Error sending reply: {e}")

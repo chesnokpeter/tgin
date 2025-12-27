@@ -1532,12 +1532,14 @@ dependencies = [
  "axum-server",
  "clap",
  "lazy_static",
+ "once_cell",
  "rand",
  "regex",
  "reqwest",
  "ron",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "tokio",
 ]
 

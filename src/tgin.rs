@@ -13,6 +13,8 @@ use std::net::SocketAddr;
 
 use tokio::runtime::Builder;
 
+use crate::dynamic::handler::dynamic_handler;
+
 
 pub struct Tgin {
     updates: Vec<Box<dyn UpdaterComponent>>,
@@ -80,7 +82,7 @@ impl Tgin {
 
 
     pub async fn run_async(self) {
-        let (tx, mut rx) = mpsc::channel::<Value>(10000);
+        let (tx, mut rx) = mpsc::channel::<Value>(1000000);
 
         let api = self.api;
 
@@ -93,13 +95,19 @@ impl Tgin {
 
             router = self.route.set_server(router).await;
 
-
+            
             if let Some(ref api) = api {
                 router = api.set_server(router).await;
             }
-
-
+            
             let app = router.with_state(tx.clone());
+
+            let app = if api.is_some() {
+                app.fallback(dynamic_handler)
+            } else {
+                app
+            };
+
             let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
             match (self.ssl_cert.clone(), self.ssl_key.clone()) {
@@ -147,6 +155,7 @@ impl Tgin {
 
 
             Some(mut api) => {
+
                 loop {
                     tokio::select! {
                         Some(api) = api.rx.recv() => {

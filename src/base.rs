@@ -10,12 +10,14 @@ use axum::Router;
 
 use crate::update::base::Updater;
 
+use crate::api::message::AddRouteType;
+
 
 #[async_trait]
 pub trait Routeable: Send + Sync {
     async fn process(&self, update: Value);
 
-    async fn add_route(&self, route: Arc<dyn RouteableComponent>) -> Result<(), ()>{
+    async fn add_route(&self, route: AddRouteType) -> Result<(), ()>{
         Err(())
     }
 }

@@ -3,6 +3,8 @@
 
     server_port: Some(3000),
 
+    api : Some(ApiConfig(base_path: "/api")),
+
     updates: [
         LongPollUpdate(
             token: "${TOKEN}",

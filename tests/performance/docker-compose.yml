@@ -54,6 +54,36 @@ services:
       testing_net:
         ipv4_address: 10.5.0.12 
 
+  webhook_bot3:
+    build: ./bot
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090
+      - WEBHOOK_PATH=/webhook
+      - PORT=8080
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.13
+
+  webhook_bot4:
+    build: ./bot
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090
+      - WEBHOOK_PATH=/webhook
+      - PORT=8080
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.14
+
+  webhook_bot5:
+    build: ./bot
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090
+      - WEBHOOK_PATH=/webhook
+      - PORT=8080
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.15
+
   longpull_bot_direct:
     build: ./bot
     environment:
@@ -65,7 +95,7 @@ services:
       - bench
     networks:
       testing_net:
-        ipv4_address: 10.5.0.25
+        ipv4_address: 10.5.0.20
 
   longpull_bot1:
     build: ./bot
@@ -89,6 +119,38 @@ services:
       testing_net:
         ipv4_address: 10.5.0.22
 
+  longpull_bot3:
+    build: ./bot
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090
+      - TGIN_ENDPOINT=http://10.5.0.21:3030/bot3/getUpdates
+    volumes:
+      - ./bot/longpull.py:/app/bot.py
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.24
+
+  longpull_bot4:
+    build: ./bot
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090
+      - TGIN_ENDPOINT=http://10.5.0.21:3030/bot4/getUpdates
+    volumes:
+      - ./bot/longpull.py:/app/bot.py
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.25
+
+  longpull_bot5:
+    build: ./bot
+    environment:
+      - TELEGRAM_API_URL=http://10.5.0.3:8090
+      - TGIN_ENDPOINT=http://10.5.0.21:3030/bot5/getUpdates
+    volumes:
+      - ./bot/longpull.py:/app/bot.py
+    networks:
+      testing_net:
+        ipv4_address: 10.5.0.26
 
 networks:
   testing_net:
