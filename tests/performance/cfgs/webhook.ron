@@ -1,5 +1,5 @@
 (
-    dark_threads: 4,
+    dark_threads: 6,
 
     api : Some(ApiConfig(base_path: "/api")),
 

@@ -54,7 +54,6 @@ impl LongPollRoute {
 
                 if !lock.is_empty() {
 
-                    println!("📤 [LP Queue {}] Popping batch. Size before: {}", self.path, lock.len());
                     let mut batch = Vec::new();
 
                     let limit = params.limit.unwrap_or(1000) as usize;
@@ -93,7 +92,6 @@ impl LongPollRoute {
 impl Routeable for LongPollRoute {
     async fn process(&self, update: Value) {
         let mut lock = self.updates.lock().await;
-        println!("📥 [LP Queue {}] Pushed. Size: {}", self.path, lock.len());
         lock.push_back(update);
         self.notify.notify_waiters();
     }

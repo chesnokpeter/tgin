@@ -128,7 +128,12 @@ func createPlot(filename, title, xLabel, yLabel string, records [][]string, valC
 
 		c := colors[i%len(colors)]
 		line.Color = c
-		line.Width = vg.Points(2)
+
+		if mode == "longpull-direct" || mode == "webhook-direct" {
+			line.Width = vg.Points(6)
+		} else {
+			line.Width = vg.Points(2)
+		}
 
 		points.Shape = draw.CircleGlyph{}
 		points.Color = c
