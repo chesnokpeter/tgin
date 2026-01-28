@@ -1,0 +1,45 @@
+(
+    HttpIngress(
+        path: "/ingress",
+        method: Method.POST
+    ),
+
+    TgBotLongPollingIngress(
+        token: "${BOT_TOKEN}"
+    ),
+
+
+
+    If(
+        Ingress(HttpIngress),
+
+        AllLB(
+            egress: [
+                RabbitmqEgress(
+                    amqp: "amqp://"
+                    exchange: "exchange"
+                    routing: "routing"
+                ),
+                KafkaEgress(
+                    server: "129.0.1.3:9092"
+                    topic: "topic"
+                )
+            ]
+        )
+    ),
+
+
+    RoundRobinLB(
+        egress: [
+            TgBotWebhook(
+                url: "http:///куда то там"
+            ),
+            TgBotLongPollingIngress(
+                path: "/bot${BOT_TOKEN}/getUpdates"
+            ),
+        ]
+    )
+
+
+
+)
