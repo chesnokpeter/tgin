@@ -2,33 +2,21 @@ use async_trait::async_trait;
 
 use tokio::sync::mpsc::Sender;
 
-use axum::Router;
-
-
-pub trait Serverable {
-    fn set_router(&self, router: Router) -> Router {
-        router
-    }
-}
 
 
 #[async_trait]
-pub trait Ingress: Send + Sync + Serverable {
-    
-    async fn start(&self, tx: Sender<Data>);
+pub trait Ingress<I>: Send + Sync 
+    where I: Send + Sync + 'static
+{
+    async fn start(&self, tx: Sender<I>);
 
 }
-
-
 
 #[async_trait]
-pub trait Egress: Send + Sync + Serverable {
-
-    async fn process(&self, data: Data);
+pub trait Egress<O>: Send + Sync
+    where O: Send + Sync + 'static 
+{
+    async fn process(&self, data: O);
 
 }
 
-#[derive(Debug, Clone)]
-pub enum Data {
-    Empty
-}

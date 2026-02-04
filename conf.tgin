@@ -1,0 +1,48 @@
+dark_threads: 6
+
+backward = {
+    HttpsIngress(
+        path: "/*",
+        listener: "0.0.0.0:8080",
+        cert: "../cert.pem",
+        domain: "mydomain.com"
+    )
+
+    HttpsIngress(
+        path: "/*",
+        listener: "0.0.0.0:8080",
+        cert: "../cert.pem",
+        domain: "www.mydomain.com"
+    )
+
+    RoundRobinLoadBalance {
+        HttpEgress(
+            url: "http://127.0.0.1:80"
+        )
+        HttpLongpollEgress(
+            path: "/bhujikmkol"
+            listener: "0.0.0.0:8082"
+        )
+    }
+
+
+}
+
+
+
+
+
+
+forward = {
+
+    TgbotWebhookIngress (
+        path: "/bot"
+        listener: "0.0.0.0:80"
+    )
+
+    RabbitmqEgress (
+        queue: "bot"
+        url: "amqp://hbjknkm"
+    )
+
+}

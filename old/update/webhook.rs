@@ -119,8 +119,8 @@ impl Serverable for WebhookUpdate {
         let secret = self.secret_token.clone();
 
         let handler_func = move |State(tx): State<Sender<Value>>,
-                                 headers: HeaderMap,
-                                 Json(update): Json<Value>| {
+                                headers: HeaderMap,
+                                Json(update): Json<Value>| {
             let secret = secret.clone();
             async move {
                 if let Some(sec) = secret {
