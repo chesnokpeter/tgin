@@ -1,6 +1,7 @@
 mod base;
 mod batteries;
 mod shared;
+mod tgin;
 
 use crate::batteries::{data::request::{RequestData, ResponseData}, egress::http::HttpEgress, ingress::http::HttpIngress};
 use crate::base::{Ingress, Egress, Forwardable, Envelope};
@@ -33,7 +34,7 @@ async fn main() {
     let server_task = tokio::spawn(async move {
         let server = {
             let mut guard = server_shared.lock().await;
-            guard.run().await;
+            guard.serve().await;
         };
     });
 

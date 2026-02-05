@@ -27,22 +27,6 @@ pub trait Forwardable<E>: Send + Sync + 'static {
     async fn process(self, egress: &E);
 }
 
-
-// #[async_trait]
-// impl<E, I, O> Forwardable<E> for Envelope<I, O>
-// where
-//     E: Egress<I, Output = O>,
-//     I: Send + Sync + 'static,
-//     O: Send + Sync + Default + 'static,
-// {
-//     async fn process(self, egress: &E) {
-//         let result = egress.send(self.data).await;
-//         if let Some(tx) = self.reply {
-//             let _ = tx.send(result);
-//         }
-//     }
-// }
-
 #[async_trait]
 impl<E, I, O> Forwardable<E> for Envelope<I, O>
 where
@@ -52,9 +36,9 @@ where
     O: Send + Sync + 'static,
 {
     async fn process(self, egress: &E) {
-        let result = egress.send(self.data).await;
+        let reverse = egress.send(self.data).await;
         if let Some(tx) = self.reply {
-            let _ = tx.send(result.into());
+            let _ = tx.send(reverse.into());
         }
     }
 }
@@ -76,4 +60,10 @@ where
 {
     type Output: Send + Sync + 'static; 
     async fn send(&self, input: I) -> Self::Output;
+}
+
+
+#[async_trait]
+pub trait Runnable: Send + Sync + 'static {
+    async fn run(&self);
 }

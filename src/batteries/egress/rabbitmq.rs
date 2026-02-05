@@ -4,13 +4,13 @@ use crate::base::Egress;
 use crate::batteries::data::request::{RequestData, ResponseData};
 
 #[derive(Clone)]
-pub struct RabbitMqEgress {
+pub struct RabbitmqEgress {
     channel: Channel,
     exchange: String,
     routing_key: String,
 }
 
-impl RabbitMqEgress {
+impl RabbitmqEgress {
     pub fn new(channel: Channel, exchange: String, routing_key: String) -> Self {
         Self {
             channel,
@@ -21,13 +21,13 @@ impl RabbitMqEgress {
 }
 
 #[async_trait]
-impl Egress<RequestData> for RabbitMqEgress {
+impl Egress<RequestData> for RabbitmqEgress {
     type Output = ResponseData; 
 
     async fn send(&self, data: RequestData) -> Self::Output {
         let payload = data.body.to_vec();
 
-        let confirm = self.channel
+        let _ = self.channel
             .basic_publish(
                 &self.exchange,
                 &self.routing_key,
@@ -37,16 +37,7 @@ impl Egress<RequestData> for RabbitMqEgress {
             )
             .await;
 
-        match confirm {
-            Ok(_) => {
-                ResponseData::default() 
-            },
-            Err(e) => {
-                println!("RabbitMQ publish error: {:?}", e);
-                let mut err_resp = ResponseData::default();
-                err_resp.status = axum::http::StatusCode::INTERNAL_SERVER_ERROR;
-                err_resp
-            }
-        }
+        ResponseData::default()
+
     }
 }

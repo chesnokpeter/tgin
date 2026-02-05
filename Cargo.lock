@@ -2514,6 +2514,8 @@ dependencies = [
  "axum",
  "axum-server",
  "clap",
+ "futures",
+ "futures-lite",
  "http-body-util",
  "lapin",
  "lazy_static",
