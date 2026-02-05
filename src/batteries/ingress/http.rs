@@ -37,10 +37,10 @@ impl HttpIngress {
 
 #[async_trait]
 impl Ingress<RequestData> for HttpIngress {
-    async fn start(&self, pipeline_tx: Sender<RequestData>) {
+    async fn start(&self, tx: Sender<RequestData>) {
         let state = HandlerState { 
-            tx: pipeline_tx, 
-            method: self.method.clone() 
+            tx, 
+            method: self.method.clone()
         };
         let router = Router::new()
             .route(&self.path, any(handler))
@@ -59,7 +59,7 @@ async fn handler(
     data: RequestData 
 ) {
     if state.method == data.method {
-        state.tx.send(data).await;
+        let _ = state.tx.send(data).await;
     }
 }
 

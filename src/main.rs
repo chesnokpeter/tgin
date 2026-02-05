@@ -37,6 +37,8 @@ async fn main() {
         };
     });
 
+    let _ = server_task.await; 
+
     while let Some(update) = rx.recv().await {
         let route_clone = egress.clone(); 
         tokio::spawn(async move {

@@ -13,6 +13,14 @@ pub struct RequestData {
     pub headers: HeaderMap,
 }
 
+#[derive(Debug, Clone)]
+pub struct ResponseData {
+    pub status: StatusCode,
+    pub headers: HeaderMap,
+    pub body: Bytes,
+    pub uri: Uri
+}
+
 
 
 #[async_trait]

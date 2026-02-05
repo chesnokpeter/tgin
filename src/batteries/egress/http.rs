@@ -31,7 +31,7 @@ impl HttpEgress {
 
 #[async_trait]
 impl Egress<RequestData> for HttpEgress {
-    async fn process(&self, data: RequestData){
+    async fn send(&self, data: RequestData){
         let url = format!("{}{}", self.url, data.uri);
         let _ = self.client.request(data.method, url)
             .body(data.body)
