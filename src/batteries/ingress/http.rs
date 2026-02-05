@@ -1,17 +1,17 @@
 use std::sync::Arc;
-use tokio::sync::{mpsc::{Receiver, Sender}, mpsc, Mutex};
+use tokio::sync::{mpsc::{Receiver, Sender}, mpsc, Mutex, oneshot};
 use async_trait::async_trait;
 use axum::{
-    Router, extract::State, http::{Method, method}, routing::any
+    Router, extract::State, http::{Method, StatusCode}, routing::any, response::IntoResponse
 };
 
-use crate::base::Ingress;
-use crate::batteries::data::request::RequestData;
+use crate::base::{Ingress, Envelope};
+use crate::batteries::data::request::{RequestData, ResponseData};
 use crate::shared::server::HttpServer;
 
 #[derive(Clone)]
 struct HandlerState {
-    tx: Sender<RequestData>,
+    tx: Sender<Envelope<RequestData, ResponseData>>,
     method: Method,
 }
 
@@ -36,8 +36,8 @@ impl HttpIngress {
 }
 
 #[async_trait]
-impl Ingress<RequestData> for HttpIngress {
-    async fn start(&self, tx: Sender<RequestData>) {
+impl Ingress<RequestData, ResponseData> for HttpIngress {
+    async fn start(&self, tx: Sender<Envelope<RequestData, ResponseData>>) {
         let state = HandlerState { 
             tx, 
             method: self.method.clone()
@@ -57,9 +57,32 @@ impl Ingress<RequestData> for HttpIngress {
 async fn handler(
     State(state): State<HandlerState>,
     data: RequestData 
-) {
-    if state.method == data.method {
-        let _ = state.tx.send(data).await;
+) -> impl IntoResponse {
+    if data.method != state.method {
+        return (StatusCode::METHOD_NOT_ALLOWED, "").into_response()
+    }
+
+    let (back_tx, back_rx) = oneshot::channel();
+
+    if state.tx.send(Envelope::backward(data, back_tx)).await.is_err() {
+        return (StatusCode::INTERNAL_SERVER_ERROR, "").into_response()
+    }
+
+    match back_rx.await {
+        Ok(response) => {
+            let mut builder = axum::response::Response::builder()
+                .status(response.status);
+
+            if let Some(headers) = builder.headers_mut() {
+                *headers = response.headers;
+            }
+
+            builder.body(axum::body::Body::from(response.body))
+                .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, "").into_response())
+        },
+        Err(_) => {
+            return (StatusCode::BAD_GATEWAY, "").into_response()
+        }
     }
 }
 

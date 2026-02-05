@@ -18,9 +18,24 @@ pub struct ResponseData {
     pub status: StatusCode,
     pub headers: HeaderMap,
     pub body: Bytes,
-    pub uri: Uri
 }
 
+
+impl Default for ResponseData {
+    fn default() -> Self {
+        Self {
+            status: StatusCode::OK,
+            headers: HeaderMap::new(),
+            body: Bytes::new(),
+        }
+    }
+}
+
+impl From<()> for ResponseData {
+    fn from(_: ()) -> Self {
+        Self::default()
+    }
+}
 
 
 #[async_trait]

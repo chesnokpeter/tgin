@@ -2,8 +2,8 @@ mod base;
 mod batteries;
 mod shared;
 
-use crate::batteries::{data::request::RequestData, egress::http::HttpEgress, ingress::http::HttpIngress};
-use crate::base::{Ingress, Egress};
+use crate::batteries::{data::request::{RequestData, ResponseData}, egress::http::HttpEgress, ingress::http::HttpIngress};
+use crate::base::{Ingress, Egress, Forwardable, Envelope};
 use crate::shared::server::HttpServer;
 
 use axum::http::Method;
@@ -17,11 +17,11 @@ async fn main() {
     let server = HttpServer::new("127.0.0.1".to_string(), 8080);
     let server_shared = Arc::new(Mutex::new(server));
 
-    let ingress = HttpIngress::new("/", Method::POST, server_shared.clone());
+    let ingress = HttpIngress::new("/test", Method::POST, server_shared.clone());
 
     let egress = HttpEgress::new("http://127.0.0.1:8090".to_string());
 
-    let (tx, mut rx) = mpsc::channel::<RequestData>(1000000);
+    let (tx, mut rx) = mpsc::channel::<Envelope<RequestData, ResponseData>>(1000000);
 
 
     let ingress_task = tokio::spawn(async move {
@@ -37,12 +37,11 @@ async fn main() {
         };
     });
 
-    let _ = server_task.await; 
 
     while let Some(update) = rx.recv().await {
         let route_clone = egress.clone(); 
         tokio::spawn(async move {
-            route_clone.process(update).await;
+            update.process(&route_clone).await;
         });
 
     }

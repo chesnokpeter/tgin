@@ -24,21 +24,37 @@ impl<I, O> Envelope<I, O> {
 
 #[async_trait]
 pub trait Forwardable<E>: Send + Sync + 'static {
-    async fn forward(self, egress: &E);
+    async fn process(self, egress: &E);
 }
 
+
+// #[async_trait]
+// impl<E, I, O> Forwardable<E> for Envelope<I, O>
+// where
+//     E: Egress<I, Output = O>,
+//     I: Send + Sync + 'static,
+//     O: Send + Sync + Default + 'static,
+// {
+//     async fn process(self, egress: &E) {
+//         let result = egress.send(self.data).await;
+//         if let Some(tx) = self.reply {
+//             let _ = tx.send(result);
+//         }
+//     }
+// }
 
 #[async_trait]
 impl<E, I, O> Forwardable<E> for Envelope<I, O>
 where
-    E: Egress<I, Output = O>,
+    E: Egress<I>,
+    E::Output: Into<O> + Send + Sync, 
     I: Send + Sync + 'static,
     O: Send + Sync + 'static,
 {
-    async fn forward(self, egress: &E) {
+    async fn process(self, egress: &E) {
         let result = egress.send(self.data).await;
         if let Some(tx) = self.reply {
-            let _ = tx.send(result);
+            let _ = tx.send(result.into());
         }
     }
 }
