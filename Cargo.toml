@@ -21,6 +21,9 @@ serde_urlencoded = "0.7.1"
 lapin = "3.7.2"
 futures-lite = "2.6.1"
 futures = "0.3.31"
+dashmap = "6.1.0"
+tokio-util = "0.7.18"
+uuid = { version = "1.20.0", features = ["v4", "serde"] }
 
 [dev-dependencies]
 wiremock = "0.6.5"

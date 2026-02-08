@@ -60,6 +60,7 @@ where
 {
     type Output: Send + Sync + 'static; 
     async fn send(&self, input: I) -> Self::Output;
+    async fn start(&self) {}
 }
 
 
