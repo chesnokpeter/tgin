@@ -11,6 +11,7 @@ pub struct RequestData {
     pub uri: Uri,
     pub method: Method,
     pub headers: HeaderMap,
+    pub client_ip: Option<std::net::IpAddr>,
 }
 
 #[derive(Debug, Clone)]
@@ -60,6 +61,7 @@ where
             uri: parts.uri,
             headers: parts.headers,
             body: body_bytes,
+            client_ip: None,
         })
     }
 }

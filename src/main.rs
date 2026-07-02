@@ -2,50 +2,21 @@ mod base;
 mod batteries;
 mod shared;
 mod tgin;
+mod types;
 
-use crate::batteries::{data::request::{RequestData, ResponseData}, egress::http::HttpEgress, ingress::http::HttpIngress};
-use crate::base::{Ingress, Egress, Forwardable, Envelope};
+use crate::batteries::egress::tunnel::TunnelEgress;
+use crate::batteries::ingress::http::HttpIngress;
 use crate::shared::server::HttpServer;
-
-use axum::http::Method;
-
-use tokio::sync::{mpsc, Mutex};
-
-use std::sync::Arc;
+use crate::tgin::Tgin;
 
 #[tokio::main]
 async fn main() {
-    let server = HttpServer::new("127.0.0.1".to_string(), 8080);
-    let server_shared = Arc::new(Mutex::new(server));
+    let server = HttpServer::new("0.0.0.0:8080");
+    let ingress = HttpIngress::catch_all(&server);
+    let egress = TunnelEgress::new(&server, "/tunnel", "demo-token");
 
-    let ingress = HttpIngress::new("/test", Method::POST, server_shared.clone());
-
-    let egress = HttpEgress::new("http://127.0.0.1:8090".to_string());
-
-    let (tx, mut rx) = mpsc::channel::<Envelope<RequestData, ResponseData>>(1000000);
-
-
-    let ingress_task = tokio::spawn(async move {
-        ingress.start(tx).await;
-    });
-
-    let _ = ingress_task.await; 
-
-    let server_task = tokio::spawn(async move {
-        let server = {
-            let mut guard = server_shared.lock().await;
-            guard.serve().await;
-        };
-    });
-
-
-    while let Some(update) = rx.recv().await {
-        let route_clone = egress.clone(); 
-        tokio::spawn(async move {
-            update.process(&route_clone).await;
-        });
-
-    }
-
-
+    Tgin::new()
+        .pipeline(ingress, egress)
+        .run()
+        .await;
 }

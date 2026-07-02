@@ -1,88 +1,103 @@
-use std::sync::Arc;
-use tokio::sync::{mpsc::{Receiver, Sender}, mpsc, Mutex, oneshot};
+use std::net::SocketAddr;
+
+use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::error::TrySendError;
+use tokio::sync::oneshot;
 use async_trait::async_trait;
 use axum::{
-    Router, extract::State, http::{Method, StatusCode}, routing::any, response::IntoResponse
+    Router,
+    extract::{ConnectInfo, State},
+    http::{Method, StatusCode},
+    routing::any,
+    response::IntoResponse,
 };
 
-use crate::base::{Ingress, Envelope};
-use crate::batteries::data::request::{RequestData, ResponseData};
+use crate::base::{Envelope, Ingress, Runnable, SendError};
 use crate::shared::server::HttpServer;
+use crate::types::request::{RequestData, ResponseData};
 
 #[derive(Clone)]
 struct HandlerState {
     tx: Sender<Envelope<RequestData, ResponseData>>,
-    method: Method,
+    method: Option<Method>,
 }
 
 pub struct HttpIngress {
-    path: String,
-    method: Method,
-    server: Arc<Mutex<HttpServer>>, 
+    server: HttpServer,
+    path: Option<String>,
+    method: Option<Method>,
 }
 
 impl HttpIngress {
-    pub fn new(
-        path: &str, 
-        method: Method, 
-        server: Arc<Mutex<HttpServer>> 
-    ) -> Self {
-        Self {
-            path: path.to_string(),
-            method,
-            server,
-        }
+    pub fn post(server: &HttpServer, path: &str) -> Self {
+        Self { server: server.clone(), path: Some(path.to_string()), method: Some(Method::POST) }
+    }
+
+    pub fn get(server: &HttpServer, path: &str) -> Self {
+        Self { server: server.clone(), path: Some(path.to_string()), method: Some(Method::GET) }
+    }
+
+    pub fn any(server: &HttpServer, path: &str) -> Self {
+        Self { server: server.clone(), path: Some(path.to_string()), method: None }
+    }
+
+    pub fn catch_all(server: &HttpServer) -> Self {
+        Self { server: server.clone(), path: None, method: None }
     }
 }
 
 #[async_trait]
 impl Ingress<RequestData, ResponseData> for HttpIngress {
-    async fn start(&self, tx: Sender<Envelope<RequestData, ResponseData>>) {
-        let state = HandlerState { 
-            tx, 
-            method: self.method.clone()
-        };
-        let router = Router::new()
-            .route(&self.path, any(handler))
-            .with_state(state);
+    fn services(&self) -> Vec<Box<dyn Runnable>> {
+        vec![Box::new(self.server.clone())]
+    }
 
-        let mut shared_server = self.server.lock().await;
-        shared_server.register_route(router);
+    async fn setup(&mut self, tx: Sender<Envelope<RequestData, ResponseData>>) {
+        let state = HandlerState { tx, method: self.method.clone() };
+        let router = match &self.path {
+            Some(path) => Router::new().route(path, any(handler)),
+            None => Router::new().fallback(any(handler)),
+        };
+        self.server.register(router.with_state(state)).await;
     }
 }
 
-
-
-
 async fn handler(
     State(state): State<HandlerState>,
-    data: RequestData 
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    mut data: RequestData,
 ) -> impl IntoResponse {
-    if data.method != state.method {
-        return (StatusCode::METHOD_NOT_ALLOWED, "").into_response()
+    data.client_ip = Some(peer.ip());
+
+    if let Some(method) = &state.method {
+        if data.method != *method {
+            return (StatusCode::METHOD_NOT_ALLOWED, "").into_response();
+        }
     }
 
     let (back_tx, back_rx) = oneshot::channel();
 
-    if state.tx.send(Envelope::backward(data, back_tx)).await.is_err() {
-        return (StatusCode::INTERNAL_SERVER_ERROR, "").into_response()
+    match state.tx.try_send(Envelope::backward(data, back_tx)) {
+        Ok(()) => {}
+        Err(TrySendError::Full(_)) => return (StatusCode::TOO_MANY_REQUESTS, "").into_response(),
+        Err(TrySendError::Closed(_)) => return (StatusCode::SERVICE_UNAVAILABLE, "").into_response(),
     }
 
     match back_rx.await {
-        Ok(response) => {
-            let mut builder = axum::response::Response::builder()
-                .status(response.status);
+        Ok(Ok(response)) => {
+            let mut builder = axum::response::Response::builder().status(response.status);
 
             if let Some(headers) = builder.headers_mut() {
                 *headers = response.headers;
             }
 
-            builder.body(axum::body::Body::from(response.body))
+            builder
+                .body(axum::body::Body::from(response.body))
                 .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, "").into_response())
-        },
-        Err(_) => {
-            return (StatusCode::BAD_GATEWAY, "").into_response()
         }
+        Ok(Err(SendError::Overloaded)) => (StatusCode::SERVICE_UNAVAILABLE, "").into_response(),
+        Ok(Err(SendError::DeadlineExceeded)) => (StatusCode::GATEWAY_TIMEOUT, "").into_response(),
+        Ok(Err(_)) => (StatusCode::BAD_GATEWAY, "").into_response(),
+        Err(_) => (StatusCode::BAD_GATEWAY, "").into_response(),
     }
 }
-

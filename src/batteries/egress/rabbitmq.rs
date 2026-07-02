@@ -1,43 +1,82 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
-use lapin::{Channel, BasicProperties, options::BasicPublishOptions};
-use crate::base::Egress;
-use crate::batteries::data::request::{RequestData, ResponseData};
+use tokio::sync::Mutex;
+use lapin::{Channel, BasicProperties, options::{BasicPublishOptions, ConfirmSelectOptions}};
+use axum::http::StatusCode;
+
+use crate::base::{Egress, Meta, SendError};
+use crate::shared::rabbitmq::Rabbit;
+use crate::types::request::{RequestData, ResponseData};
 
 #[derive(Clone)]
 pub struct RabbitmqEgress {
-    channel: Channel,
+    rabbit: Rabbit,
     exchange: String,
     routing_key: String,
+    channel: Arc<Mutex<Option<Channel>>>,
 }
 
 impl RabbitmqEgress {
-    pub fn new(channel: Channel, exchange: String, routing_key: String) -> Self {
+    pub fn new(rabbit: &Rabbit, exchange: &str, routing_key: &str) -> Self {
         Self {
-            channel,
-            exchange,
-            routing_key,
+            rabbit: rabbit.clone(),
+            exchange: exchange.to_string(),
+            routing_key: routing_key.to_string(),
+            channel: Arc::new(Mutex::new(None)),
         }
+    }
+
+    async fn channel(&self) -> Option<Channel> {
+        let mut guard = self.channel.lock().await;
+
+        if let Some(channel) = guard.as_ref() {
+            if channel.status().connected() {
+                return Some(channel.clone());
+            }
+        }
+
+        let connection = self.rabbit.connection().await?;
+        let channel = connection.create_channel().await.ok()?;
+        channel.confirm_select(ConfirmSelectOptions::default()).await.ok()?;
+
+        *guard = Some(channel.clone());
+        Some(channel)
     }
 }
 
 #[async_trait]
 impl Egress<RequestData> for RabbitmqEgress {
-    type Output = ResponseData; 
+    type Output = ResponseData;
 
-    async fn send(&self, data: RequestData) -> Self::Output {
-        let payload = data.body.to_vec();
+    async fn send(&self, data: RequestData, _meta: &Meta) -> Result<ResponseData, SendError> {
+        let channel = self.channel().await
+            .ok_or_else(|| SendError::retryable("rabbitmq connection unavailable"))?;
 
-        let _ = self.channel
+        let confirm = channel
             .basic_publish(
                 &self.exchange,
                 &self.routing_key,
                 BasicPublishOptions::default(),
-                &payload,
+                data.body.as_ref(),
                 BasicProperties::default(),
             )
-            .await;
+            .await
+            .map_err(SendError::retryable)?
+            .await
+            .map_err(SendError::retryable)?;
 
-        ResponseData::default()
+        if confirm.is_nack() {
+            return Err(SendError::retryable("broker nacked publish"));
+        }
 
+        Ok(ResponseData { status: StatusCode::ACCEPTED, ..Default::default() })
+    }
+
+    async fn stop(&self) {
+        let channel = self.channel.lock().await.take();
+        if let Some(channel) = channel {
+            let _ = channel.close(200, "shutdown").await;
+        }
     }
 }

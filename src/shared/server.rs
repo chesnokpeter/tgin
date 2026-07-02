@@ -1,43 +1,64 @@
-use tokio::net::TcpListener; 
-use axum::Router;
-use async_trait::async_trait;
-use tokio::sync::Mutex;
+use std::net::SocketAddr;
 use std::sync::Arc;
+
+use async_trait::async_trait;
+use tokio::net::TcpListener;
+use tokio::sync::Mutex;
+use tokio_util::sync::CancellationToken;
+use axum::Router;
 
 use crate::base::Runnable;
 
+struct Inner {
+    addr: String,
+    router: Mutex<Router>,
+}
 
+#[derive(Clone)]
 pub struct HttpServer {
-    host: String, 
-    port: u16,
-    router: Router
+    inner: Arc<Inner>,
 }
 
 impl HttpServer {
-    pub fn new(host: String, port: u16) -> Self {
+    pub fn new(addr: &str) -> Self {
         Self {
-            host: host.clone(),
-            port,
-            router: Router::new()
+            inner: Arc::new(Inner {
+                addr: addr.to_string(),
+                router: Mutex::new(Router::new()),
+            }),
         }
     }
 
-    pub fn register_route(&mut self, new_route: Router) {
-        let old_router = std::mem::take(&mut self.router);
-        self.router = old_router.merge(new_route);
+    pub async fn register(&self, route: Router) {
+        let mut router = self.inner.router.lock().await;
+        let current = std::mem::take(&mut *router);
+        *router = current.merge(route);
     }
 
-    pub async fn serve(&self) {
-        let listener = TcpListener::bind(format!("{}:{}", self.host, self.port)).await.expect("You can not use HttpServer for this host and port");
+    pub async fn serve(&self, shutdown: CancellationToken) {
+        let listener = TcpListener::bind(&self.inner.addr)
+            .await
+            .expect("HttpServer: cannot bind address");
 
-        axum::serve(listener, self.router.clone()).await.unwrap();
+        let router = self.inner.router.lock().await.clone();
+        let app = router.into_make_service_with_connect_info::<SocketAddr>();
+
+        axum::serve(listener, app)
+            .with_graceful_shutdown(async move { shutdown.cancelled().await })
+            .await
+            .unwrap();
+
+        *self.inner.router.lock().await = Router::new();
     }
 }
 
 #[async_trait]
-impl Runnable for Arc<Mutex<HttpServer>> {
-    async fn run(&self) {
-        let guard = self.lock().await;
-        guard.serve().await;
+impl Runnable for HttpServer {
+    fn id(&self) -> Option<usize> {
+        Some(Arc::as_ptr(&self.inner) as usize)
+    }
+
+    async fn run(&self, shutdown: CancellationToken) {
+        self.serve(shutdown).await;
     }
 }
