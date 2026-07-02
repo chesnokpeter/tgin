@@ -1,2 +1,0 @@
-
-from .aiogram import TginUpateLongPullServer
