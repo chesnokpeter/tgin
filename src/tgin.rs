@@ -144,6 +144,12 @@ pub struct Tgin {
     pipelines: Vec<Box<dyn PipelineRunner>>,
 }
 
+impl Default for Tgin {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Tgin {
     pub fn new() -> Self {
         Self {

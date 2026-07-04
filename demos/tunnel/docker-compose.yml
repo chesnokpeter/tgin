@@ -1,0 +1,31 @@
+services:
+  server:
+    build:
+      context: ../..
+      dockerfile: demos/Dockerfile
+    command: /app/tunnel_server
+    environment:
+      TUNNEL_TOKEN: change-me-to-a-long-random-secret
+    ports:
+      - "8080:8080"
+
+  client:
+    build:
+      context: ../..
+      dockerfile: demos/Dockerfile
+    command: /app/tunnel_client
+    environment:
+      TUNNEL_SERVER: ws://server:8080/tunnel
+      TUNNEL_TOKEN: change-me-to-a-long-random-secret
+      LOCAL_TARGET: http://app:8000
+    depends_on:
+      - server
+      - app
+
+  app:
+    image: python:3.12-slim
+    command: python /app.py
+    environment:
+      NAME: hidden-local-app
+    volumes:
+      - ./app.py:/app.py:ro

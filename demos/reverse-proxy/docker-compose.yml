@@ -1,0 +1,40 @@
+services:
+  tgin:
+    build:
+      context: ../..
+      dockerfile: demos/Dockerfile
+    command: /app/reverse_proxy
+    environment:
+      API_BACKEND_1: http://backend1:8000
+      API_BACKEND_2: http://backend2:8000
+      DEFAULT_BACKEND: http://backend3:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
+
+  backend1:
+    image: python:3.12-slim
+    command: python /backend.py
+    environment:
+      NAME: backend1
+    volumes:
+      - ./backend.py:/backend.py:ro
+
+  backend2:
+    image: python:3.12-slim
+    command: python /backend.py
+    environment:
+      NAME: backend2
+    volumes:
+      - ./backend.py:/backend.py:ro
+
+  backend3:
+    image: python:3.12-slim
+    command: python /backend.py
+    environment:
+      NAME: backend3
+    volumes:
+      - ./backend.py:/backend.py:ro

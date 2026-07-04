@@ -55,7 +55,11 @@ impl RabbitmqIngress {
             return;
         }
         let _ = channel
-            .queue_declare(&self.queue, QueueDeclareOptions::default(), FieldTable::default())
+            .queue_declare(
+                &self.queue,
+                QueueDeclareOptions { durable: true, ..QueueDeclareOptions::default() },
+                FieldTable::default(),
+            )
             .await;
 
         let mut consumer = match channel

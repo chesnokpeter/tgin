@@ -1,0 +1,21 @@
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: sudo apt-get update && sudo apt-get install -y build-essential zlib1g-dev
+      - run: cargo build --all-targets
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      - run: cargo package --no-verify --allow-dirty

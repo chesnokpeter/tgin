@@ -3,48 +3,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
 
-use crate::base::{Egress, Meta, SendError};
-
-#[async_trait]
-trait DynEgress<I, O>: Send + Sync {
-    async fn setup(&mut self);
-    async fn send(&self, input: I, meta: &Meta) -> Result<O, SendError>;
-    async fn stop(&self);
-}
-
-#[async_trait]
-impl<E, I, O> DynEgress<I, O> for E
-where
-    E: Egress<I, Output = O> + 'static,
-    I: Send + Sync + 'static,
-    O: Send + Sync + 'static,
-{
-    async fn setup(&mut self) {
-        Egress::setup(self).await;
-    }
-
-    async fn send(&self, input: I, meta: &Meta) -> Result<O, SendError> {
-        Egress::send(self, input, meta).await
-    }
-
-    async fn stop(&self) {
-        Egress::stop(self).await;
-    }
-}
-
-async fn setup_children<I, O>(egresses: &mut Arc<Vec<Box<dyn DynEgress<I, O>>>>) {
-    if let Some(egresses) = Arc::get_mut(egresses) {
-        for egress in egresses.iter_mut() {
-            egress.setup().await;
-        }
-    }
-}
-
-async fn stop_children<I, O>(egresses: &Arc<Vec<Box<dyn DynEgress<I, O>>>>) {
-    for egress in egresses.iter() {
-        egress.stop().await;
-    }
-}
+use crate::base::{Egress, Meta, Runnable, SendError};
+use crate::batteries::dyn_egress::{DynEgress, collect_services, setup_children, stop_children};
 
 pub struct RoundRobin<I, O> {
     egresses: Arc<Vec<Box<dyn DynEgress<I, O>>>>,
@@ -57,6 +17,16 @@ impl<I, O> Clone for RoundRobin<I, O> {
             egresses: self.egresses.clone(),
             cursor: self.cursor.clone(),
         }
+    }
+}
+
+impl<I, O> Default for RoundRobin<I, O>
+where
+    I: Send + Sync + 'static,
+    O: Send + Sync + 'static,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -90,6 +60,10 @@ where
     O: Send + Sync + 'static,
 {
     type Output = O;
+
+    fn services(&self) -> Vec<Box<dyn Runnable>> {
+        collect_services(&self.egresses)
+    }
 
     async fn setup(&mut self) {
         setup_children(&mut self.egresses).await;
@@ -133,6 +107,16 @@ impl<I, O> Clone for All<I, O> {
     }
 }
 
+impl<I, O> Default for All<I, O>
+where
+    I: Send + Sync + 'static,
+    O: Send + Sync + 'static,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<I, O> All<I, O>
 where
     I: Send + Sync + 'static,
@@ -162,6 +146,10 @@ where
     O: Send + Sync + 'static,
 {
     type Output = O;
+
+    fn services(&self) -> Vec<Box<dyn Runnable>> {
+        collect_services(&self.egresses)
+    }
 
     async fn setup(&mut self) {
         setup_children(&mut self.egresses).await;

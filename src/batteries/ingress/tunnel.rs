@@ -51,7 +51,7 @@ impl TunnelIngress {
 
         let writer = tokio::spawn(async move {
             while let Some(message) = out_rx.recv().await {
-                if sink.send(Message::Binary(message.into())).await.is_err() {
+                if sink.send(Message::Binary(message)).await.is_err() {
                     return;
                 }
             }

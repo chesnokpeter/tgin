@@ -59,7 +59,7 @@ impl Egress<RequestData> for RabbitmqEgress {
                 &self.routing_key,
                 BasicPublishOptions::default(),
                 data.body.as_ref(),
-                BasicProperties::default(),
+                BasicProperties::default().with_delivery_mode(2),
             )
             .await
             .map_err(SendError::retryable)?
