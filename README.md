@@ -13,8 +13,10 @@
 #### any traffic in - any traffic out. A Rust construction kit for building gateways of your own shape: one core, endless batteries
 
 [![ci](https://github.com/chesnokpeter/tgin/actions/workflows/ci.yml/badge.svg)](https://github.com/chesnokpeter/tgin/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/tgin.svg)](https://crates.io/crates/tgin)
+[![docs.rs](https://docs.rs/tgin/badge.svg)](https://docs.rs/tgin)
 
-[HISTORY](HISTORY.md) | [DEMOS](demos/README.md) | [EXAMPLES](examples/)
+[HISTORY](HISTORY.md) | [DEMOS](demos/README.md) | [EXAMPLES](examples/) | [DOCS](https://docs.rs/tgin)
 
 > [!IMPORTANT]
 > active development is continuing: there is no stable version yet
@@ -65,9 +67,13 @@ cd demos/kafka-bridge && docker compose up --build
 
 ### Use as a library
 tgin is a library crate — your gateway is your own ~20 line binary:
+```
+cargo add tgin
+```
+or in Cargo.toml:
 ```toml
 [dependencies]
-tgin = { git = "https://github.com/chesnokpeter/tgin", branch = "main" }
+tgin = "0.1"
 ```
 
 ### Configuration
